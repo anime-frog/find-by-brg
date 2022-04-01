@@ -71,7 +71,8 @@ int main(int argc, char *argv[])
 {
     // check for the presence and existence of a file
 
-    img = cv::imread(argv[1], 1);
+    if (argc > 2)
+        img = cv::imread(argv[1], 1);
 
     if (argc < 2 || img.empty())
     {
@@ -167,18 +168,13 @@ int main(int argc, char *argv[])
             break;
     }
 
-    // release matrices
-    img.release();
-    bgr_channel[0].release();
-    bgr_channel[1].release();
-    bgr_channel[2].release();
-
     // destroy windows
     cv::destroyAllWindows();
 
     std::cout << "Do you want to write created image? (y - yes/ other key - no): ";
-
-    if (std::cin >> key && key == 'y')
+    std::cin >> key;
+    
+    if (key == 'y')
     {
         while (getchar() != '\n');
 
@@ -196,13 +192,6 @@ int main(int argc, char *argv[])
         cv::imwrite("src/result/" + filename + ".jpg", bgr) ? 
             std::cout << "File has been wroten\n" : std::cout << "File hasn't been wroten\n";
     }
-    else
-    {
-        std::cin.ignore(1000, '\n');
-        std::cin.clear();
-    }
-
-    bgr.release();
 
     return 0;
 }
