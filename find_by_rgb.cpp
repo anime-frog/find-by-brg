@@ -1,11 +1,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <filesystem>
+#include <boost/filesystem.hpp>
 #include <opencv4/opencv2/opencv.hpp>
 
 
-// create matrices
+// initialize matrices
 cv::Mat img;
 
 cv::Mat red_plane;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 {
     // check for the presence and existence of a file
 
-    if (argc > 2)
+    if (argc >= 2)
         img = cv::imread(argv[1], 1);
 
     if (argc < 2 || img.empty())
@@ -97,14 +97,14 @@ int main(int argc, char *argv[])
     double framemin;
     double framemax;
 
-    // channel
+    // create BGR-channel
     std::vector<cv::Mat> bgr_channel(3);
 
     // adjusting matrices to a specific format
-    red_range.create(cv::Size(img.cols, img.rows), CV_8UC1);
-    green_range.create(cv::Size(img.cols, img.rows), CV_8UC1);
-    blue_range.create(cv::Size(img.cols, img.rows), CV_8UC1);
-    bgr.create(cv::Size(img.cols, img.rows), CV_8UC1);
+    red_range.create(img.size(), CV_8UC1);
+    green_range.create(img.size(), CV_8UC1);
+    blue_range.create(img.size(), CV_8UC1);
+    bgr.create(img.size(), CV_8UC1);
 
     // split image on 3 channels (blue, green, red)
     cv::split(img, bgr_channel);
@@ -171,26 +171,40 @@ int main(int argc, char *argv[])
     // destroy windows
     cv::destroyAllWindows();
 
+    // ask to save image with settings
     std::cout << "Do you want to write created image? (y - yes/ other key - no): ";
     std::cin >> key;
-    
+
     if (key == 'y')
     {
+        // move to the end of the buffer
         while (getchar() != '\n');
 
         std::string filename;
 
-        if (!std::filesystem::exists("src/result"))
-            std::filesystem::create_directories("src/result");
-
         std::cout << "Enter name of image: ";
-
-        getchar();
-        
         std::getline(std::cin, filename);
 
-        cv::imwrite("src/result/" + filename + ".jpg", bgr) ? 
-            std::cout << "File has been wroten\n" : std::cout << "File hasn't been wroten\n";
+        // create directories where will be located image with settings
+        if (!boost::filesystem::exists("src/result/" + filename))
+            boost::filesystem::create_directories("src/result/" + filename);
+
+        // create file with settings
+        boost::filesystem::fstream configs("src/result/" + filename + "/" + filename + "_settings.txt", std::ios::out);
+
+        // write settings
+        configs << "BMin: " << Bmin << "\tBMax: " << Bmax 
+                << "\nGMin: " << Gmin << "\tGMax: " << Gmax 
+                << "\nRMin: " << Rmin << "\tRMax: " << Rmax;
+
+        configs.close();
+
+        // show if files are saved
+        boost::filesystem::file_size("src/result/" + filename + "/" + filename + "_settings.txt") > 0 ?
+            std::cout << "Settings have been saved\n" : std::cout << "Settings haven't been saved\n";
+
+        cv::imwrite("src/result/" + filename + "/" + filename +".jpg", bgr) ? 
+            std::cout << "Image has been saved\n" : std::cout << "Image hasn't been saved\n";
     }
 
     return 0;
